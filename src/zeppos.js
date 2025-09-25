@@ -1,10 +1,12 @@
 /**
  * @file zeppos.js
  * @description A smart plugin factory for integrating rx-tiny-flux with ZeppOS (via ZML).
- * It exposes `dispatch` and a lifecycle-aware `subscribe` method,
- * automatically handling unsubscriptions during the `onDestroy` lifecycle hook
- * to prevent memory leaks.
+ * It provides a `storePlugin` for lifecycle-aware subscriptions and context injection,
+ * and custom RxJS operators (`isApp`, `isSideService`) to distinguish between
+ * execution environments (App/Page vs. Side Service).
  */
+
+import { withLatestFromStore, isSideService, isApp } from './zeppos-operators';
 
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
@@ -20,10 +22,17 @@ function storePlugin(instance, store) {
 
   return {
     /**
-     * A proxy to the store's dispatch method.
+     * A proxy to the store's dispatch method. It injects the component's `this`
+     * context into the action, allowing effects to access other plugins.
      * @param {object} action - The action to be dispatched to the store.
      */
-    dispatch: store.dispatch.bind(store),
+    dispatch(action) {
+      // 'this' refers to the App/Page instance.
+      // We augment the action with the instance context, making it available to effects.
+      // This allows effects to use other plugins like logger, toast, etc.
+      const actionWithContext = { ...action, context: this };
+      store.dispatch(actionWithContext);
+    },
 
     /**
      * Subscribes to a selector and automatically manages the subscription's lifecycle.
@@ -59,4 +68,4 @@ function storePlugin(instance, store) {
   };
 }
 
-export { storePlugin };
+export { storePlugin, isSideService, isApp, withLatestFromStore };
