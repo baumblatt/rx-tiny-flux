@@ -1,0 +1,40 @@
+{
+  "name": "rx-tiny-flux",
+  "version": "1.0.0",
+  "description": "A lightweight, minimalist state management library for pure JavaScript projects, inspired by NgRx and Redux, and built with RxJS.",
+  "author": "Bernardo Baumblatt <baumblatt@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baumblatt/rx-tiny-flux.git"
+  },
+  "keywords": [
+    "rxjs",
+    "state-management",
+    "redux",
+    "ngrx",
+    "flux",
+    "zeppos",
+    "tiny",
+    "lightweight"
+  ],
+  "type": "module",
+  "main": "dist/rx-tiny-flux.esm.js",
+  "zeppos": true,
+  "exports": {
+    ".": "./dist/rx-tiny-flux.esm.js",
+    "./zeppos": "./dist/zeppos.esm.js"
+  },
+  "scripts": {
+    "start": "node examples/counter.js",
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "rollup": "^4.9.6",
+    "rxjs": "^7.8.2"
+  }
+}
