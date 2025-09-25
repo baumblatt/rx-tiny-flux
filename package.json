@@ -22,8 +22,7 @@
   "main": "dist/rx-tiny-flux.esm.js",
   "zeppos": true,
   "exports": {
-    ".": "./dist/rx-tiny-flux.esm.js",
-    "./zeppos": "./dist/zeppos.esm.js"
+    ".": "./dist/rx-tiny-flux.esm.js"
   },
   "scripts": {
     "start": "node examples/counter.js",

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { filter, map, mergeMap, tap } from './zeppos-rxjs';
+import { filter, map, mergeMap, tap } from './rxjs';
 
 /**
  * @typedef {import('./actions').Action} Action

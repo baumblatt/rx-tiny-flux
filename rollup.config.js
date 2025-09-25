@@ -22,22 +22,4 @@ export default [
     ],
     plugins: [json(), nodeResolve(), commonjs()],
   },
-  // Third entry point for ZeppOS plugin
-  {
-    input: 'src/zeppos.js',
-    output: [
-      {
-        file: 'dist/zeppos.esm.js',
-        format: 'es',
-        sourcemap: false,
-      },
-      {
-        file: 'dist/zeppos.esm.min.js',
-        format: 'es',
-        sourcemap: false,
-        plugins: [terser()],
-      },
-    ],
-    plugins: [json(), nodeResolve(), commonjs()],
-  },
 ];

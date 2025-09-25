@@ -5,11 +5,6 @@
  * operators needed for development in the ZeppOS environment.
  */
 
-import { withLatestFromStore, isSideService, isApp, propagateAction } from './zeppos-operators';
-
-// Export all necessary operators and functions for ZeppOS
-export * from './zeppos-rxjs';
-export { withLatestFromStore, isSideService, isApp, propagateAction };
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
  * This plugin function is called by the ZML `.use()` method and adapts its behavior
