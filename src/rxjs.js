@@ -12,6 +12,7 @@ export {
 	delay,
 	filter,
 	tap,
+	withLatestFrom,
 	catchError,
 	// Creation Functions
 	defer,
