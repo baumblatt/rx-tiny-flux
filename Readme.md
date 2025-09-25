@@ -201,8 +201,9 @@ This plugin injects `dispatch` and `subscribe` methods into your component's ins
 1.  **Create your store** instance in `app.js`.
 2.  **Import the `storePlugin`** from `rx-tiny-flux`.
 3.  **Register the plugin on `BaseApp`**, passing the `store` instance: `BaseApp.use(storePlugin, store)`.
-4.  **Register the same plugin on `BasePage`**, but without the store: `BasePage.use(storePlugin)`. The plugin will automatically find the store from the App.
-5.  **Use `this.dispatch()` and `this.subscribe()`** inside your App and Pages.
+4.  **Register the same plugin on `BasePage`** (without the store): `BasePage.use(storePlugin)`. The plugin will automatically find the store from the App.
+5.  For a **Side Service**, you can create a separate store or use the same one, but you must pass it during registration, just like with `BaseApp`: `BaseSideService.use(storePlugin, serviceStore)`.
+6.  **Use `this.dispatch()` and `this.subscribe()`** inside your App, Pages, and Side Service.
 
 Here is a complete example:
 
