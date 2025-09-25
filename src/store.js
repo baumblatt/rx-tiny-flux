@@ -97,9 +97,20 @@ export class Store {
    * @param {...function(import('rxjs').Observable<Action>): import('rxjs').Observable<Action>} effects
    */
   registerEffects(...effects) {
-    const effectStreams = effects.map((effect) => effect(this._actions$));
-    // Merges all action streams returned by the effects and dispatches them back into the store.
-    merge(...effectStreams).subscribe((action) => this.dispatch(action));
+    effects.forEach((effectFn) => {
+      // Check for the metadata attached by createEffect
+      const config = effectFn._rxEffect || { dispatch: true };
+      const effect$ = effectFn(this._actions$);
+
+      if (config.dispatch) {
+        // If dispatch is true (default), subscribe and dispatch the resulting actions.
+        effect$.subscribe(this.dispatch.bind(this));
+      } else {
+        // If dispatch is false, just subscribe to trigger the side-effect.
+        // The output is ignored.
+        effect$.subscribe();
+      }
+    });
   }
 
   /**
