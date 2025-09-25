@@ -1,13 +1,15 @@
 /**
  * @file zeppos.js
- * @description A smart plugin factory for integrating rx-tiny-flux with ZeppOS (via ZML).
- * It provides a `storePlugin` for lifecycle-aware subscriptions and context injection,
- * and custom RxJS operators (`isApp`, `isSideService`) to distinguish between
- * execution environments (App/Page vs. Side Service).
+ * @description The main entry point for ZeppOS integration.
+ * It exports the `storePlugin` and a curated set of custom and standard RxJS
+ * operators needed for development in the ZeppOS environment.
  */
 
-import { withLatestFromStore, isSideService, isApp } from './zeppos-operators';
+import { withLatestFromStore, isSideService, isApp, propagateAction } from './zeppos-operators';
 
+// Export all necessary operators and functions for ZeppOS
+export * from './zeppos-rxjs';
+export { withLatestFromStore, isSideService, isApp, propagateAction };
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
  * @param {object} instance - The App or Page instance (injected by ZML's plugin service).
@@ -53,6 +55,21 @@ function storePlugin(instance, store) {
       // Return the subscription object in case the developer needs to unsubscribe manually.
       return subscription;
     },
+
+    /**
+     * Lifecycle hook that listens for incoming messages from another context.
+     * If the message looks like an action (i.e., has a `type` property),
+     * it dispatches it into the local store.
+     * @param {object} message - The message object received from the other context.
+     */
+    onCall(message) {
+      // Check if the incoming message is an action.
+      if (message && typeof message.type === 'string') {
+        // Dispatch received action into the local store.
+        // The `dispatch` method will automatically enrich it with the current context.
+        this.dispatch(message);
+      }
+    },
     /**
      * Lifecycle hook that will be merged and called during the instance's destruction.
      * This is the core of the automatic memory management feature.
@@ -68,4 +85,4 @@ function storePlugin(instance, store) {
   };
 }
 
-export { storePlugin, isSideService, isApp, withLatestFromStore };
+export { storePlugin };

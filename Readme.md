@@ -116,9 +116,9 @@ const incrementAsyncEffect = createEffect((actions$) =>
 
 ---
 
-## Using RxJS Operators
+## RxJS Operators for ZeppOS
 
-For use in restricted environments like **ZeppOS**, where direct dependencies are not allowed, `Rx-Tiny-Flux` re-exports a curated set of common RxJS operators and creation functions from a dedicated entry point: `rx-tiny-flux/rxjs`. This allows you to build complex effects without needing to import from `rxjs` directly in your application code.
+For use in restricted environments like **ZeppOS**, where direct dependencies on `rxjs` are not allowed, `Rx-Tiny-Flux` re-exports a curated set of common RxJS operators and creation functions from its ZeppOS-specific entry point: `rx-tiny-flux/zeppos`. This allows you to build complex effects without needing to manage RxJS imports in your application code.
 
 **Available Exports:**
 
@@ -126,6 +126,9 @@ For use in restricted environments like **ZeppOS**, where direct dependencies ar
     *   `from`: Converts a Promise, an array, or an iterable into an Observable.
     *   `of`: Emits a variable number of arguments as a sequence and then completes.
     *   `defer`: Creates an Observable that, on subscription, calls an Observable factory to make a fresh Observable for each new Subscriber.
+
+*   **Constants:**
+    *   `EMPTY`: An Observable that emits no items to the Observer and immediately emits a complete notification. It's useful in effects to stop a stream without dispatching a new action.
 
 *   **Higher-Order Mapping Operators:** Used to manage inner Observables, typically for handling asynchronous operations like API calls.
     *   `concatMap`: Maps to an inner Observable and processes them sequentially.
@@ -140,11 +143,13 @@ For use in restricted environments like **ZeppOS**, where direct dependencies ar
     *   `delay`: Delays the emission of items from the source Observable by a given timeout.
     *   `catchError`: Catches errors on the source Observable and returns a new Observable or throws an error.
 
+*   **Utilities:**
+    *   `pipe`: A utility function for composing operators in a readable, left-to-right sequence. While `Observable.pipe()` is the most common usage, having `pipe` available allows for creating reusable operator compositions.
+
 ```javascript
-// Instead of: import { map, from } from 'rxjs';
-// You can do:
+// Instead of managing `rxjs` imports, you can get everything from the `zeppos` entry point:
 import { createEffect, ofType } from 'rx-tiny-flux';
-import { map, from } from 'rx-tiny-flux/rxjs';
+import { map, from, isApp, propagateAction } from 'rx-tiny-flux/zeppos';
 
 // ... your effect implementation
 ```

@@ -1,4 +1,5 @@
-import {filter, map, mergeMap, Observable} from 'rxjs';
+import { Observable } from 'rxjs';
+import { filter, map, mergeMap, tap } from './zeppos-rxjs';
 
 /**
  * @typedef {import('./actions').Action} Action
@@ -57,3 +58,21 @@ export const isSideService = () => filter(() => typeof messaging !== 'undefined'
  * only if the code is running in the ZeppOS App or Page environment.
  */
 export const isApp = () => filter(() => typeof messaging === 'undefined');
+
+/**
+ * A pipeable RxJS operator for effects, designed to propagate an action from one ZeppOS
+ * context to another (e.g., App to Side Service).
+ *
+ * It uses the `context.call` method injected by the ZML plugin system. The `context`
+ * property is removed from the action before sending to avoid circular data.
+ *
+ * @returns {import('rxjs').OperatorFunction<Action, Action>} An operator that performs the side effect of calling the other context.
+ */
+export const propagateAction = () => tap((action) => {
+  if (action.context && typeof action.context.call === 'function') {
+    // Destructure to remove the context before sending.
+    // The receiving side will inject its own context.
+    const { context, ...actionToSend } = action;
+    action.context.call(actionToSend);
+  }
+});
