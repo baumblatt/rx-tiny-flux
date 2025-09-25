@@ -9,3 +9,4 @@
 # Logs e diretórios de ferramentas
 npm-debug.log*
 .vscode
+.idea
