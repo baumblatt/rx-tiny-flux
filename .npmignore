@@ -1,0 +1,11 @@
+# Diretórios de código fonte e exemplos
+/src
+/examples
+
+# Arquivos de configuração de build e versionamento
+/rollup.config.js
+/.gitignore
+
+# Logs e diretórios de ferramentas
+npm-debug.log*
+.vscode
