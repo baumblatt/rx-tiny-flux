@@ -295,3 +295,98 @@ Page(BasePage({
   }
 }));
 ```
+
+#### Accessing Component Context in Effects
+
+The `storePlugin` automatically injects the component instance (`this` from `BasePage` or `BaseApp` or `BaseSideService`) into every dispatched action under the `context` property. This powerful feature allows your effects to access other plugins or methods available on the component instance, such as a logger, a toast notification service, or the router.
+
+This enables better separation of concerns, where effects can trigger UI-related side effects without being tightly coupled to specific UI components.
+
+**Example: Showing a Toast Notification from an Effect**
+
+Imagine you have a `toast` plugin registered on your `BasePage`. You can create an effect that listens for a success action and uses the injected context to show a notification.
+
+```javascript
+// effects/toast.effect.js
+import { createEffect, ofType } from 'rx-tiny-flux';
+import { tap } from 'rx-tiny-flux/rxjs';
+import { operationSuccess } from '../actions';
+
+export const showSuccessToastEffect = createEffect(
+  (actions$) =>
+    actions$.pipe(
+      ofType(operationSuccess),
+      // The action now contains the 'context' of the Page that dispatched it
+      tap((action) => {
+        // Check if the context and the toast plugin exist before using it
+        if (action.context && action.context.toast) {
+          action.context.toast.show({ text: 'Operation successful!' });
+        }
+      })
+    ),
+  // This effect does not dispatch a new action, so we set dispatch: false
+  { dispatch: false }
+);
+```
+
+#### Environment-Specific Effects with `isApp` and `isSideService`
+
+When building complex ZeppOS applications, you often need effects that run exclusively on the watch face (App/Page) or in the background service (Side Service). To simplify this, `rx-tiny-flux` provides two custom RxJS operators: `isApp` and `isSideService`.
+
+These operators filter the action stream based on the execution environment, making your effects cleaner and more declarative.
+
+*   `isApp()`: Allows actions to pass through only when running on the App/Page.
+*   `isSideService()`: Allows actions to pass through only when running in the Side Service.
+
+**Example: Handling a request between App and Side Service**
+
+```javascript
+// Import the operators from the zeppos entry point
+import { createEffect, ofType } from 'rx-tiny-flux';
+import { isApp, isSideService } from 'rx-tiny-flux/zeppos';
+import { fetchData, fetchDataSuccess, fetchDataError } from './actions';
+
+// This effect runs on the App side and requests data from the service
+const requestDataEffect = createEffect(actions$ => actions$.pipe(
+  ofType(fetchData),
+  isApp(),
+  // ... logic to send a message to the side service
+));
+
+// This effect runs on the Side Service, handles the request, and calls a backend
+const handleDataRequestEffect = createEffect(actions$ => actions$.pipe(
+  ofType(fetchData),
+  isSideService(),
+  // ... logic to call a backend API and return the result to the app
+));
+```
+
+#### Accessing State within Effects using `withLatestFromStore`
+
+A common requirement for effects is to access the current state to make decisions. For example, an effect might need the current user's ID to fetch data. The `withLatestFromStore` operator is designed for this purpose, especially in ZeppOS where the `store` instance isn't readily available when defining effects.
+
+It works by safely using the `subscribe` method injected into the action's context by the `storePlugin`.
+
+**Example: Fetching data using a value from the state**
+
+```javascript
+import { createEffect, ofType } from 'rx-tiny-flux';
+// Import the new operator from the zeppos entry point
+import { withLatestFromStore } from 'rx-tiny-flux/zeppos';
+import { switchMap, map, catchError } from 'rx-tiny-flux/rxjs';
+import { fetchData, fetchDataSuccess, fetchDataError } from './actions';
+import { selectCurrentUserId } from './selectors';
+
+const fetchDataEffect = createEffect(actions$ => actions$.pipe(
+  ofType(fetchData),
+  // Combines the action with the latest value from the store using the selector
+  withLatestFromStore(selectCurrentUserId),
+  // The next operator receives an array: [action, userId]
+  switchMap(([action, userId]) =>
+    from(api.fetchDataForUser(userId)).pipe(
+      map(data => fetchDataSuccess(data)),
+      catchError(error => of(fetchDataError(error)))
+    ))
+));
+```
+```
