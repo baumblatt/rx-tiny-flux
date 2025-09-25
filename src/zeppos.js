@@ -23,6 +23,8 @@ function storePlugin(instance, store) {
   }
 
   return {
+    onInit() { console.log ('storePlugin.init()')},
+    onCreate() { console.log ('storePlugin.create()')},
     /**
      * A proxy to the store's dispatch method. It injects the component's `this`
      * context into the action, allowing effects to access other plugins.

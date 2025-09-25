@@ -33,10 +33,7 @@ export class Store {
     const initialStoreState = typeof structuredClone === 'function' ? structuredClone(initialState) : JSON.parse(JSON.stringify(initialState));
     this._state$ = new BehaviorSubject(initialStoreState);
 
-    const dispatcher$ = this._actions$.pipe(
-      // Optional: log for debugging
-      tap((action) => console.log('Action Dispatched:', action))
-    );
+    const dispatcher$ = this._actions$;
 
     const state$ = dispatcher$.pipe(
       scan((currentState, action) => {
