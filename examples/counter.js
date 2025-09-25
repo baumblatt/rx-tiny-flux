@@ -8,10 +8,13 @@ import {
   createFeatureSelector,
   createSelector,
   ofType,
-  concatMap,
-  from,
-  map,
 } from '../dist/rx-tiny-flux.esm.js'; // Pointing to the built file for a realistic test
+
+import {
+	concatMap,
+	from,
+	map,
+} from '../dist/zeppos.esm.js'
 
 // 1. ESTADO INICIAL
 // The Store can start with an empty state.
