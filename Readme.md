@@ -240,31 +240,29 @@ This plugin injects `dispatch` and `subscribe` methods into your component's ins
 
 #### How to Use
 
-1.  **Create and configure your store** as usual.
+1.  **Create your store** instance in `app.js`.
 2.  **Import the `storePlugin`** from `rx-tiny-flux/zeppos`.
-3.  **Register the plugin** globally for `BaseApp` and `BasePage` using the static `.use()` method, passing your store instance.
-4.  **Use `this.dispatch()` and `this.subscribe()`** inside your pages.
+3.  **Register the plugin on `BaseApp`**, passing the `store` instance: `BaseApp.use(storePlugin, store)`.
+4.  **Register the same plugin on `BasePage`**, but without the store: `BasePage.use(storePlugin)`. The plugin will automatically find the store from the App.
+5.  **Use `this.dispatch()` and `this.subscribe()`** inside your App and Pages.
 
 Here is a complete example:
 
 ```javascript
 // app.js - Your application's entry point
-import { BaseApp, BasePage } from '@zeppos/zml';
+import { BaseApp } from '@zeppos/zml';
 import { Store } from 'rx-tiny-flux';
 import { storePlugin } from 'rx-tiny-flux/zeppos';
 
 // 1. Import your reducers, actions, etc.
 import { counterReducer } from './path/to/reducers';
-import { selectCounterValue } from './path/to/selectors';
-import { increment } from './path/to/actions';
 
 // 2. Create your store instance
 const store = new Store({});
 store.registerReducers(counterReducer);
 
-// 3. Register the plugin globally for App and Pages
+// 3. Register the plugin on BaseApp, providing the store.
 BaseApp.use(storePlugin, store);
-BasePage.use(storePlugin, store);
 
 App(BaseApp({
   // ... your App config
@@ -277,11 +275,14 @@ import { BasePage, ui } from '@zeppos/zml';
 import { selectCounterValue } from '../path/to/selectors';
 import { increment } from './path/to/actions';
 
+// 4. Register the plugin on BasePage, without providing the store, it will be retriave on the App.
+BasePage.use(storePlugin);
+
 Page(BasePage({
   build() {
     const myText = ui.createWidget(ui.widget.TEXT, { /* ... */ });
 
-    // 4. Use `this.subscribe` to listen to state changes
+    // 5. Use `this.subscribe` to listen to state changes
     this.subscribe(selectCounterValue, (value) => {
       myText.setProperty(ui.prop.TEXT, `Counter: ${value}`);
     });

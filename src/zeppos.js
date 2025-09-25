@@ -12,76 +12,95 @@ export * from './zeppos-rxjs';
 export { withLatestFromStore, isSideService, isApp, propagateAction };
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
- * @param {object} instance - The App or Page instance (injected by ZML's plugin service).
- * @param {object} store - The store instance from `rx-tiny-flux` passed via `.use(plugin, store)`.
+ * This plugin function is called by the ZML `.use()` method and adapts its behavior
+ * based on whether it's initializing an App or a Page.
+ *
+ * For `BaseApp.use(storePlugin, store)`, it receives the store and attaches it.
+ * For `BasePage.use(storePlugin)`, it finds the store on the global App object.
+ *
+ * @param {object} instance - The App or Page instance (injected by ZML).
+ * @param {Store} [store] - The store instance, provided only when used with `BaseApp`.
  * @returns {object} A mixin object with methods and lifecycle hooks to be merged.
  */
 function storePlugin(instance, store) {
-  if (!store) {
-    console.error('[rx-tiny-flux] StorePlugin Error: Store instance was not provided on .use()');
-    return {};
-  }
-
+  // This is the core logic: return a plugin object with different behaviors
+  // for the App's `onCreate` and the Page's `onInit`.
   return {
-    onInit() { console.log ('storePlugin.init()')},
-    onCreate() { console.log ('storePlugin.create()')},
-    /**
-     * A proxy to the store's dispatch method. It injects the component's `this`
-     * context into the action, allowing effects to access other plugins.
-     * @param {object} action - The action to be dispatched to the store.
-     */
-    dispatch(action) {
-      // 'this' refers to the App/Page instance.
-      // We augment the action with the instance context, making it available to effects.
-      // This allows effects to use other plugins like logger, toast, etc.
-      const actionWithContext = { ...action, context: this };
-      store.dispatch(actionWithContext);
-    },
-
-    /**
-     * Subscribes to a selector and automatically manages the subscription's lifecycle.
-     * @param {Function} selector - A function that selects a slice of the state.
-     * @param {Function} callback - The function to execute when the selected state changes.
-     * @returns {object} The subscription object, allowing for manual unsubscription if needed.
-     */
-    subscribe(selector, callback) {
-      // 'this' refers to the App/Page instance.
-      // Initialize an internal array to hold subscriptions if it doesn't exist.
-      if (!this._subscriptions) {
-        this._subscriptions = [];
+    // This hook is called for the App instance.
+    onCreate() {
+      if (!store) {
+        console.error('[rx-tiny-flux] StorePlugin Error: A store instance must be provided to `BaseApp.use(storePlugin, store)`.');
+        return;
       }
 
-      const subscription = store.select(selector).subscribe(callback);
-      this._subscriptions.push(subscription);
+      // Attach the store and a dispatch method to the App instance.
+      this._store = store;
+      this.dispatch = (action) => {
+        const actionWithContext = { ...action, context: this };
+        this._store.dispatch(actionWithContext);
+      };
 
-      // Return the subscription object in case the developer needs to unsubscribe manually.
-      return subscription;
+      this.onCall = (message) => {
+        if (message && typeof message.type === 'string') {
+          this.dispatch(message);
+        }
+      };
+
+      // Handle subscriptions at the App level.
+      this.subscribe = (selector, callback) => {
+        if (!this._subscriptions) {
+          this._subscriptions = [];
+        }
+        const subscription = this._store.select(selector).subscribe(callback);
+        this._subscriptions.push(subscription);
+        return subscription;
+      };
     },
 
-    /**
-     * Lifecycle hook that listens for incoming messages from another context.
-     * If the message looks like an action (i.e., has a `type` property),
-     * it dispatches it into the local store.
-     * @param {object} message - The message object received from the other context.
-     */
-    onCall(message) {
-      // Check if the incoming message is an action.
-      if (message && typeof message.type === 'string') {
-        // Dispatch received action into the local store.
-        // The `dispatch` method will automatically enrich it with the current context.
-        this.dispatch(message);
+    // This hook is called for Page instances.
+    onInit() {
+      const app = getApp();
+      if (!app || !app._store) {
+        console.error('[rx-tiny-flux] Store not found on global App object. Ensure the plugin is registered on BaseApp.');
+        // Provide dummy methods to prevent crashes.
+        this.dispatch = () => console.error('Dispatch failed: store not initialized.');
+        this.subscribe = () => console.error('Subscribe failed: store not initialized.');
+        return;
       }
+
+      // Delegate dispatch to the central App's dispatch method.
+      this.dispatch = (action) => {
+        // The context (`this`) is the Page instance, which is what we want for effects.
+        const actionWithContext = { ...action, context: this };
+        app._store.dispatch(actionWithContext);
+      };
+
+      // Handle subscriptions locally within the Page for lifecycle management.
+      this.subscribe = (selector, callback) => {
+        if (!this._subscriptions) {
+          this._subscriptions = [];
+        }
+        const subscription = app._store.select(selector).subscribe(callback);
+        this._subscriptions.push(subscription);
+        return subscription;
+      };
+
+      // Handle incoming calls locally on the page.
+      this.onCall = (message) => {
+        if (message && typeof message.type === 'string') {
+          this.dispatch(message);
+        }
+      };
     },
+
     /**
-     * Lifecycle hook that will be merged and called during the instance's destruction.
+     * Lifecycle hook for destruction, used by both App and Pages.
      * This is the core of the automatic memory management feature.
      */
     onDestroy() {
-      // 'this' refers to the App/Page instance.
       if (this._subscriptions && this._subscriptions.length > 0) {
-        // console.log(`[rx-tiny-flux] Unsubscribing from ${this._subscriptions.length} subscriptions.`);
         this._subscriptions.forEach((sub) => sub.unsubscribe());
-        this._subscriptions = []; // Clear the array.
+        this._subscriptions = [];
       }
     },
   };
