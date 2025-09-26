@@ -19,6 +19,15 @@ export class Store {
   _actions$ = new Subject();
 
   /**
+   * Public observable stream of all dispatched actions.
+   * Useful for effects and plugins.
+   * @type {import('rxjs').Observable<Action>}
+   */
+  get actions$() {
+    return this._actions$.asObservable();
+  }
+
+  /**
    * @private
    * @type {Array<{path: string, initialState: any, reducerFn: function(any, Action): any}>}
    */

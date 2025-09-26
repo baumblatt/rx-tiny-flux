@@ -5,6 +5,7 @@
  * operators needed for development in the ZeppOS environment.
  */
 
+import { filter } from 'rxjs/operators';
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
  * This plugin function is called by the ZML `.use()` method and adapts its behavior
@@ -123,6 +124,32 @@ function storePlugin(instance, store) {
         this._subscriptions.push(subscription);
         return subscription;
       };
+
+	  // For Pages, add a method to listen to specific store actions for side-effects.
+	  if (!isSideServiceContext) {
+		/**
+		 * Subscribes to specific store actions to trigger side-effects like UI notifications.
+		 * Subscriptions are automatically cleaned up when the Page is destroyed.
+		 *
+		 * @param {string|{type: string}|Array<string|{type: string}>} actionTypes The action type(s) to listen for.
+		 * @param {function(import('./actions').Action): void} callback The function to execute when the action is dispatched.
+		 */
+		this.listen = (actionTypes, callback) => {
+		  const types = (Array.isArray(actionTypes) ? actionTypes : [actionTypes])
+			.map(t => (typeof t === 'function' ? t.type : t));
+
+		  if (types.some(t => typeof t !== 'string')) {
+			throw new Error('[rx-tiny-flux] listen: actionTypes must be strings or action creators with a `type` property.');
+		  }
+
+		  if (!this._subscriptions) {
+		    this._subscriptions = [];
+	      }
+
+			const subscription = this._store.actions$.pipe(filter(action => types.includes(action.type))).subscribe(callback);
+			this._subscriptions.push(subscription);
+		};
+	  }
     },
 
     /**
