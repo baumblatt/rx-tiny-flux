@@ -36,14 +36,15 @@ function storePlugin(instance, store) {
         this._store.dispatch(actionWithContext);
       };
 
-      this.onCall = (message) => {
-        if (message && typeof message.type === 'string') {
-		  this.debug(`Dispatching action ${message.type} App.onCall)`);
-          this.dispatch(message);
+      this.onAction = (action) => {
+        if (action && typeof action.type === 'string') {
+		  this.debug(`Dispatching action ${action.type} from App.onAction.`);
+          this.dispatch(action);
         } else {
-		  this.debug(`Not an Action, discarding App.onCall message.`)
+		  this.debug(`Not an Action, discarding the message on App.onAction.`)
 		}
       };
+	  this.messaging.onCall(this.onAction);
 
       // Handle subscriptions at the App level.
       this.subscribe = (selector, callback) => {
@@ -97,14 +98,16 @@ function storePlugin(instance, store) {
         return subscription;
       };
 
-      this.onCall = (message) => {
-        if (message && typeof message.type === 'string') {
-		  this.debug(`Dispatching action ${message.type} (${isSideServiceContext ? 'SideService' : 'Page'}.onCall)`);
-          this.dispatch(message);
-        } else {
+	  this.onAction = (action) => {
+		if (action && typeof action.type === 'string') {
+		  this.debug(`Dispatching action ${action.type} (${isSideServiceContext ? 'SideService' : 'Page'}.onCall)`);
+		  this.dispatch(action);
+		} else {
 		  this.debug(`Not an Action, discarding ${isSideServiceContext ? 'SideService' : 'Page'}.onCall message.`)
 		}
-      };
+	  };
+	  this.messaging.onCall(this.onAction);
+
     },
 
     /**
@@ -112,6 +115,9 @@ function storePlugin(instance, store) {
      * This is the core of the automatic memory management feature.
      */
     onDestroy() {
+	  // tears down the messaging listener
+	  this.messaging.offCall(this.onAction);
+
       if (this._subscriptions && this._subscriptions.length > 0) {
         this._subscriptions.forEach((sub) => sub.unsubscribe());
         this._subscriptions = [];
