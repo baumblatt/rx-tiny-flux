@@ -1,20 +1,17 @@
 import {
-  Store,
-  createAction,
-  createReducer,
-  createEffect,
-  on,
-  anyAction,
-  createFeatureSelector,
-  createSelector,
-  ofType,
-} from '../dist/rx-tiny-flux.esm.js'; // Pointing to the built file for a realistic test
-
-import {
+	anyAction,
 	concatMap,
+	createAction,
+	createEffect,
+	createFeatureSelector,
+	createReducer,
+	createSelector,
 	from,
 	map,
-} from '../dist/zeppos.esm.js'
+	ofType,
+	on,
+	Store,
+} from '../dist/rx-tiny-flux.esm.js'; // Pointing to the built file for a realistic test
 
 // 1. ESTADO INICIAL
 // The Store can start with an empty state.

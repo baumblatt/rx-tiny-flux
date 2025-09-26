@@ -28,6 +28,7 @@ function storePlugin(instance, store) {
         return;
       }
 
+	  this.debug('Attach the store and a dispatch method to the App instance.')
       // Attach the store and a dispatch method to the App instance.
       this._store = store;
       this.dispatch = (action) => {
@@ -37,8 +38,11 @@ function storePlugin(instance, store) {
 
       this.onCall = (message) => {
         if (message && typeof message.type === 'string') {
+		  this.debug(`Dispatching action ${message.type} App.onCall)`);
           this.dispatch(message);
-        }
+        } else {
+		  this.debug(`Not an Action, discarding App.onCall message.`)
+		}
       };
 
       // Handle subscriptions at the App level.
@@ -78,6 +82,7 @@ function storePlugin(instance, store) {
       }
 
       // Attach dispatch, subscribe, and onCall methods.
+	  this.debug(`Attach the store and a dispatch method to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`)
       this.dispatch = (action) => {
         const actionWithContext = { ...action, context: this };
         this._store.dispatch(actionWithContext);
@@ -94,8 +99,11 @@ function storePlugin(instance, store) {
 
       this.onCall = (message) => {
         if (message && typeof message.type === 'string') {
+		  this.debug(`Dispatching action ${message.type} (${isSideServiceContext ? 'SideService' : 'Page'}.onCall)`);
           this.dispatch(message);
-        }
+        } else {
+		  this.debug(`Not an Action, discarding ${isSideServiceContext ? 'SideService' : 'Page'}.onCall message.`)
+		}
       };
     },
 

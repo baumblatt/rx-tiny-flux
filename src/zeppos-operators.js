@@ -72,7 +72,10 @@ export const propagateAction = () => tap((action) => {
   if (action.context && typeof action.context.call === 'function') {
     // Destructure to remove the context before sending.
     // The receiving side will inject its own context.
+    this.debug(`Dispatching action ${action.type} though call(action).`);
     const { context, ...actionToSend } = action;
     action.context.call(actionToSend);
+  } else {
+    this.debug(`Action not propagated though call(action).`);
   }
 });
