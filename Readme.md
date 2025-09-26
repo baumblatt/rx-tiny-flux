@@ -302,26 +302,50 @@ These operators filter the action stream based on the execution environment, mak
 *   `isApp()`: Allows actions to pass through only when running on the App/Page.
 *   `isSideService()`: Allows actions to pass through only when running in the Side Service.
 
-**Example: Handling a request between App and Side Service**
+#### Propagating Actions and Preserving Context
+
+A powerful feature of the ZeppOS integration is the automatic management of `context`. When you dispatch an action, the `storePlugin` attaches the current component instance (App, Page, or Service) to the action as `action.context`.
+
+Crucially, when an effect creates a **new action** (e.g., a `Success` action in response to a `Request` action), the library **automatically preserves this context**.
+
+This means you can create chains of effects across different contexts (like App -> Side Service -> App) and the final resulting action will still have the context of the component that *initiated the entire chain*. This allows you to easily perform UI updates (like showing a toast) in response to a background task completing.
+
+**Example: Requesting data from the Side Service and showing a toast on completion**
 
 ```javascript
-// Import all operators from the main entry point
-import { createEffect, ofType, isApp, isSideService } from 'rx-tiny-flux';
-import { fetchData, fetchDataSuccess, fetchDataError } from './actions';
+// Import operators and factories
+import { createEffect, ofType, isApp, isSideService, propagateAction, map, tap } from 'rx-tiny-flux';
+import { fetchData, fetchDataSuccess } from './actions'; // Your actions
 
-// This effect runs on the App side and requests data from the service
+// 1. Effect on the App: When `fetchData` is dispatched, propagate it to the Side Service.
 const requestDataEffect = createEffect(actions$ => actions$.pipe(
-  ofType(fetchData),
-  isApp(),
-  // ... logic to send a message to the side service
+  ofType(fetchData),   // Listen for the initial request
+  isApp(),             // Run only on the App/Page side
+  propagateAction()    // Send the action to the Side Service
+), { dispatch: false });
+
+// 2. Effect on the Side Service: When `fetchData` is received, perform a task and dispatch a result.
+const handleDataRequestEffect = createEffect(actions$ => actions$.pipe(
+  ofType(fetchData),     // Listen for the propagated action
+  isSideService(),       // Run only on the Side Service
+  // Perform async work... then map the result to a success action.
+  // You can use the standard `map` operator. The context is handled automatically!
+  map(() => fetchDataSuccess({ payload: 'data from service' }))
 ));
 
-// This effect runs on the Side Service, handles the request, and calls a backend
-const handleDataRequestEffect = createEffect(actions$ => actions$.pipe(
-  ofType(fetchData),
-  isSideService(),
-  // ... logic to call a backend API and return the result to the app
-));
+// 3. Effect on the App: Listen for the final success action and use its context to update the UI.
+const showSuccessToastEffect = createEffect(actions$ => actions$.pipe(
+  ofType(fetchDataSuccess),
+  isApp(),
+  tap(action => {
+    // This works because the `context` from the original `fetchData` action was
+    // automatically attached to the `fetchDataSuccess` action by the store.
+    if (action.context && action.context.toast) {
+      action.context.toast.show({ text: 'Data loaded!' });
+    }
+  })
+), { dispatch: false });
+
 ```
 
 #### Accessing State within Effects using `withLatestFromStore`

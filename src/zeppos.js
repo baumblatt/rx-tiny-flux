@@ -28,8 +28,10 @@ function storePlugin(instance, store) {
         return;
       }
 
+	  // add the App context to the store.
+	  store.setContext(this);
+
 	  this.debug('Attach the store and a dispatch method to the App instance.')
-      // Attach the store and a dispatch method to the App instance.
       this._store = store;
       this.dispatch = (action) => {
         const actionWithContext = { ...action, context: this };
@@ -59,31 +61,55 @@ function storePlugin(instance, store) {
 
     // This hook is called for Page and Side Service instances.
     onInit() {
-      // Check if we are in a Side Service context
+      let localStore;
       const isSideServiceContext = typeof messaging !== 'undefined';
 
       if (isSideServiceContext) {
         // Side Service behaves like the App: it needs its own store instance.
         if (!store) {
           console.error('[rx-tiny-flux] StorePlugin Error: A store instance must be provided to `BaseSideService.use(storePlugin, store)`.');
-          return;
+        } else {
+          store.setContext(this);
+          localStore = store;
+
+          // For SideService, define an onAction that dispatches to its own store.
+          this.onAction = (action) => {
+            if (action && typeof action.type === 'string') {
+              this.debug(`Dispatching action ${action.type} from SideService.onAction.`);
+              this.dispatch(action);
+            } else {
+              this.debug(`Not an Action, discarding the message on SideService.onAction.`);
+            }
+          };
         }
-        this._store = store;
       } else {
         // Page context: find the store on the global App object.
         const app = getApp();
         if (!app || !app._store) {
           console.error('[rx-tiny-flux] Store not found on global App object. Ensure the plugin is registered on BaseApp.');
-          // Provide dummy methods to prevent crashes.
-          this.dispatch = () => console.error('Dispatch failed: store not initialized.');
-          this.subscribe = () => console.error('Subscribe failed: store not initialized.');
-          return;
+        } else {
+          localStore = app._store;
         }
-        this._store = app._store;
+
+        // For Pages, onAction is a no-op because the App's onAction handles it.
+        // We still need to define it to register/unregister the listener correctly.
+        this.onAction = () => {};
       }
 
-      // Attach dispatch, subscribe, and onCall methods.
-	  this.debug(`Attach the store and a dispatch method to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`)
+      // If we couldn't find a store, set up fake methods and exit.
+      if (!localStore) {
+		this.onAction = () => console.error('[rx-tiny-flux] OnAction failed: store not initialized.');
+		this.messaging.onCall(this.onAction);
+        this.dispatch = () => console.error('[rx-tiny-flux] Dispatch failed: store not initialized.');
+        this.subscribe = () => console.error('[rx-tiny-flux] Subscribe failed: store not initialized.');
+        return;
+      }
+
+      // --- Store is valid, proceed with setup ---
+      this._store = localStore;
+      this.messaging.onCall(this.onAction);
+
+      this.debug(`Attaching store methods to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`);
       this.dispatch = (action) => {
         const actionWithContext = { ...action, context: this };
         this._store.dispatch(actionWithContext);
@@ -97,17 +123,6 @@ function storePlugin(instance, store) {
         this._subscriptions.push(subscription);
         return subscription;
       };
-
-	  this.onAction = (action) => {
-		if (action && typeof action.type === 'string') {
-		  this.debug(`Dispatching action ${action.type} (${isSideServiceContext ? 'SideService' : 'Page'}.onCall)`);
-		  this.dispatch(action);
-		} else {
-		  this.debug(`Not an Action, discarding ${isSideServiceContext ? 'SideService' : 'Page'}.onCall message.`)
-		}
-	  };
-	  this.messaging.onCall(this.onAction);
-
     },
 
     /**
@@ -115,7 +130,7 @@ function storePlugin(instance, store) {
      * This is the core of the automatic memory management feature.
      */
     onDestroy() {
-	  // tears down the messaging listener
+	  // tear down the messaging listener
 	  this.messaging.offCall(this.onAction);
 
       if (this._subscriptions && this._subscriptions.length > 0) {

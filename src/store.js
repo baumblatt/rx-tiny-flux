@@ -25,6 +25,12 @@ export class Store {
   _reducers = [];
 
   /**
+   * @private
+   * @type {object|null}
+   */
+  _context = null;
+
+  /**
    * @param {object} initialState - The initial state of the application.
    */
   constructor(initialState = {}) {
@@ -90,6 +96,15 @@ export class Store {
   }
 
   /**
+   * Sets the execution context for the store.
+   * This is used by plugins to make the store context-aware.
+   * @param {object} context - The component instance (e.g., BaseApp, BasePage).
+   */
+  setContext(context) {
+    this._context = context;
+  }
+
+  /**
    * Registers effects in the store.
    * @param {...function(import('rxjs').Observable<Action>): import('rxjs').Observable<Action>} effects
    */
@@ -97,11 +112,22 @@ export class Store {
     effects.forEach((effectFn) => {
       // Check for the metadata attached by createEffect
       const config = effectFn._rxEffect || { dispatch: true };
-      const effect$ = effectFn(this._actions$);
+      let effect$ = effectFn(this._actions$);
 
       if (config.dispatch) {
-        // If dispatch is true (default), subscribe and dispatch the resulting actions.
-        effect$.subscribe(this.dispatch.bind(this));
+        // If a context is set, automatically inject it into actions emitted by the effect.
+        if (this._context) {
+          effect$ = effect$.pipe(
+            map(action => {
+              // If the action doesn't already have a context, add it.
+              if (!action.context) {
+                return { ...action, context: this._context };
+              }
+              return action;
+            })
+          );
+        }
+        effect$.subscribe(action => this.dispatch(action));
       } else {
         // If dispatch is false, just subscribe to trigger the side-effect.
         // The output is ignored.
