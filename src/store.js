@@ -116,18 +116,12 @@ export class Store {
 
       if (config.dispatch) {
         // If a context is set, automatically inject it into actions emitted by the effect.
-        if (this._context) {
-          effect$ = effect$.pipe(
-            map(action => {
-              // If the action doesn't already have a context, add it.
-              if (!action.context) {
-                return { ...action, context: this._context };
-              }
-              return action;
-            })
-          );
-        }
-        effect$.subscribe(action => this.dispatch(action));
+	    effect$.pipe(
+		  map(action => {
+		    // If a context is set and the action doesn't already have a context, add it.
+		    return this._context && !action.context ? {...action, context: this._context} : action;
+		  })
+	    ).subscribe(action => this.dispatch(action));
       } else {
         // If dispatch is false, just subscribe to trigger the side-effect.
         // The output is ignored.
