@@ -158,7 +158,7 @@ function storePlugin(instance, store) {
      */
     onDestroy() {
 	  // tear down the messaging listener
-	  this.messaging.offCall(this.onAction);
+	  this.messaging.offOnCall(this.onAction);
 
       if (this._subscriptions && this._subscriptions.length > 0) {
         this._subscriptions.forEach((sub) => sub.unsubscribe());
