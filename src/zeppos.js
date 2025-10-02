@@ -50,11 +50,26 @@ function storePlugin(instance, store) {
 	  this.messaging.onCall(this.onAction);
 
       // Handle subscriptions at the App level.
-      this.subscribe = (selector, callback) => {
+      /**
+       * Subscribes to a piece of the store's state, with optional RxJS operators.
+       * Subscriptions are automatically cleaned up when the App is destroyed.
+       *
+       * @param {function(object): any} selector A function to select a part of the state.
+       * @param {...import('rxjs').OperatorFunction<any, any>} operators Zero or more RxJS operators to pipe.
+       * @param {function(any): void} callback The function to execute with the selected state.
+       * @returns {import('rxjs').Subscription} The subscription object.
+       */
+      this.subscribe = (selector, ...args) => {
         if (!this._subscriptions) {
           this._subscriptions = [];
         }
-        const subscription = this._store.select(selector).subscribe(callback);
+
+        const callback = args.pop();
+        const operators = args; // The rest of the arguments are operators
+
+        const stream$ = this._store.select(selector);
+        const piped$ = operators.length > 0 ? stream$.pipe(...operators) : stream$;
+        const subscription = piped$.subscribe(callback);
         this._subscriptions.push(subscription);
         return subscription;
       };
@@ -116,11 +131,26 @@ function storePlugin(instance, store) {
         this._store.dispatch(actionWithContext);
       };
 
-      this.subscribe = (selector, callback) => {
+      /**
+       * Subscribes to a piece of the store's state, with optional RxJS operators.
+       * Subscriptions are automatically cleaned up when the Page/Service is destroyed.
+       *
+       * @param {function(object): any} selector A function to select a part of the state.
+       * @param {...import('rxjs').OperatorFunction<any, any>} operators Zero or more RxJS operators to pipe.
+       * @param {function(any): void} callback The function to execute with the selected state.
+       * @returns {import('rxjs').Subscription} The subscription object.
+       */
+      this.subscribe = (selector, ...args) => {
         if (!this._subscriptions) {
           this._subscriptions = [];
         }
-        const subscription = this._store.select(selector).subscribe(callback);
+
+        const callback = args.pop();
+        const operators = args; // The rest of the arguments are operators
+
+        const stream$ = this._store.select(selector);
+        const piped$ = operators.length > 0 ? stream$.pipe(...operators) : stream$;
+        const subscription = piped$.subscribe(callback);
         this._subscriptions.push(subscription);
         return subscription;
       };
