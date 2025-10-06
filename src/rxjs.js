@@ -11,6 +11,7 @@ export {
 	mergeMap,
 	delay,
 	filter,
+	take,
 	tap,
 	withLatestFrom,
 	catchError,
