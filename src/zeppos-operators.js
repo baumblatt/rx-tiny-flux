@@ -1,4 +1,4 @@
-import {filter, map, mergeMap, take, tap} from './rxjs';
+import {filter, map, tap} from 'rxjs';
 
 /**
  * @typedef {import('./actions').Action} Action
@@ -18,24 +18,23 @@ import {filter, map, mergeMap, take, tap} from './rxjs';
  * @param {function(object): any} selector - The selector function to get a slice of the state.
  * @returns {import('rxjs').OperatorFunction<Action, [Action, any]>} A new observable that emits an array containing the original action and the selected state slice.
  */
-export const withLatestFromStore = (selector) => (source$) =>
-  source$.pipe(
-    mergeMap((action) => {
-      if (!action.context || !action.context._store || typeof action.context._store.select !== 'function') {
+export const withLatestFromStore = (selector) => (source$) => source$.pipe(
+    // Validate that the store is available on the action's context.
+    tap(action => {
+      if (!action.context || !action.context._store || !action.context._store._state$) {
         throw new Error(
           '[rx-tiny-flux] `withLatestFromStore` could not find a valid store on `action.context._store`. Ensure the `storePlugin` is correctly configured.'
         );
       }
-
-      // Directly use the store's select method, take the first value, and map it.
-      return action.context._store.select(selector).pipe(
-        // Take the first (and current) value, then automatically complete.
-        take(1),
-        // Combine the original action with the retrieved state slice.
-        map(stateSlice => [action, stateSlice])
-      );
+    }),
+    // Combine the action with the latest state slice from the store.
+    // This is more direct and performant than using `mergeMap` because `_state$`
+    // is a BehaviorSubject, allowing synchronous access to its current value.
+    map(action => {
+      const state = action.context._store._state$.getValue();
+      return [action, selector(state)];
     })
-  );
+);
 
 /**
  * A pipeable RxJS operator that filters an observable stream, allowing emissions
