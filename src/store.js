@@ -1,5 +1,5 @@
-import { BehaviorSubject, Subject, merge } from 'rxjs';
-import { scan, shareReplay, startWith, tap, distinctUntilChanged, map } from 'rxjs/operators';
+import {BehaviorSubject, Subject} from 'rxjs';
+import {distinctUntilChanged, map, scan, shareReplay, startWith} from 'rxjs/operators';
 
 /**
  * @typedef {import('./actions').Action} Action
@@ -52,26 +52,26 @@ export class Store {
 
     const state$ = dispatcher$.pipe(
       scan((currentState, action) => {
-        // Clones the state to ensure immutability.
-        // For larger apps, a library like `lodash.cloneDeep` would be more robust.
-        const nextState = JSON.parse(JSON.stringify(currentState));
+        // Create a shallow copy of the state. This is key to preserving references
+        // for unchanged state slices, which allows memoized selectors to work.
+        let nextState = { ...currentState };
+        let hasChanged = false;
 
         this._reducers.forEach(({ path: featureKey, reducerFn }) => {
           // Gets the current state slice.
-          const stateSlice = nextState[featureKey];
+          const stateSlice = currentState[featureKey];
 
           // Executes the reducer to get the new slice.
           const nextStateSlice = reducerFn(stateSlice, action);
 
-          // If the reducer returned a new value (not undefined) and it's different from the previous one,
-          // apply the change to the state object.
-          if (nextStateSlice !== undefined && stateSlice !== nextStateSlice) {
-            // Directly assign the new slice to the corresponding key in the state.
+          // If the reducer returned a new object reference, the slice has changed.
+          if (stateSlice !== nextStateSlice) {
             nextState[featureKey] = nextStateSlice;
+            hasChanged = true;
           }
         });
 
-        return nextState;
+        return hasChanged ? nextState : currentState;
       }, initialStoreState),
       startWith(initialState),
       // Ensures new subscribers receive the last emitted state and shares the execution.
@@ -89,19 +89,23 @@ export class Store {
   registerReducers(...reducers) {
     this._reducers.push(...reducers);
 
-    // Builds the initial state from the registered reducers
+    // Get the current state and prepare a shallow copy.
     const currentState = this._state$.getValue();
-    const nextState = JSON.parse(JSON.stringify(currentState));
+    const nextState = { ...currentState };
+    let hasChanged = false;
 
     reducers.forEach(({ path: featureKey, initialState }) => {
       // If the state slice has not been defined yet, apply the reducer's initial state.
       if (nextState[featureKey] === undefined) {
         nextState[featureKey] = initialState;
+        hasChanged = true;
       }
     });
 
-    // Emits the new constructed state
-    this._state$.next(nextState);
+    // Only emit a new state if a new feature slice was actually added.
+    if (hasChanged) {
+      this._state$.next(nextState);
+    }
   }
 
   /**

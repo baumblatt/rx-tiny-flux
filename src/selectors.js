@@ -28,12 +28,45 @@ export function createSelector(...args) {
   // All previous arguments are the input selectors.
   const inputSelectors = args;
 
-  if (typeof projectionFn !== 'function') {
-    throw new Error('The last argument to createSelector must be a projection function.');
+  // Memoization state
+  let lastResult;
+  let lastArgs;
+  let hasRun = false;
+
+  /**
+   * Checks if two arrays of arguments are shallowly equal.
+   * @param {any[]} a - First array of arguments.
+   * @param {any[]} b - Second array of arguments.
+   * @returns {boolean} - True if the arrays are equal.
+   */
+  function areArgsEqual(a, b) {
+    if (!b || a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      // Strict equality check for each argument. This works because our improved
+      // store logic preserves references for unchanged state slices.
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  return (state) => {
-    const inputs = inputSelectors.map(selector => selector(state));
-    return projectionFn(...inputs);
-  }
+	return (state) => {
+	  const newArgs = inputSelectors.map(selector => selector(state));
+
+	  if (hasRun && areArgsEqual(newArgs, lastArgs)) {
+		  // If the inputs from selectors are the same as last time, return the cached result.
+		  // This preserves reference equality for derived data.
+		  return lastResult;
+	  }
+
+	  // Otherwise, compute the new result, cache it, and return it.
+	  lastArgs = newArgs;
+	  lastResult = projectionFn(...newArgs);
+	  hasRun = true;
+
+	  return lastResult;
+  };
 }
