@@ -29,11 +29,13 @@
     "build": "rollup -c"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
     "rollup": "^4.9.6",
-    "rxjs": "^7.8.2"
+    "rollup-plugin-dts": "^6.2.3",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.9.3"
   }
 }

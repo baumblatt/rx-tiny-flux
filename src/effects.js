@@ -1,7 +1,7 @@
 import { filter } from 'rxjs';
 
 /**
- * @typedef {import('./actions').Action} Action
+ * @typedef {import('./types').Action} Action
  * @typedef {import('rxjs').Observable<Action>} ActionStream
  */
 

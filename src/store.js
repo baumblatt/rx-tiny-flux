@@ -2,7 +2,7 @@ import {BehaviorSubject, Subject} from 'rxjs';
 import {distinctUntilChanged, map, scan, shareReplay, startWith} from 'rxjs/operators';
 
 /**
- * @typedef {import('./actions').Action} Action
+ * @typedef {import('./types').Action} Action
  */
 
 export class Store {

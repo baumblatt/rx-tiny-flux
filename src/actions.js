@@ -1,10 +1,4 @@
 /**
- * @typedef {Object} Action
- * @property {string} type - The action type, a unique string describing it.
- * @property {any} [payload] - The data associated with the action.
- */
-
-/**
  * Factory function to create an action.
  * @param {string} type - The action type.
  * @returns {function(any=): Action} A function that creates the action with an optional payload.

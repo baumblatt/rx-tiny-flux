@@ -1,7 +1,7 @@
 import {filter, map, tap} from 'rxjs';
 
 /**
- * @typedef {import('./actions').Action} Action
+ * @typedef {import('./types').Action} Action
  */
 
 /**
