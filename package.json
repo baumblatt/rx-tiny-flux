@@ -1,6 +1,6 @@
 {
   "name": "rx-tiny-flux",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "A lightweight, minimalist state management library for pure JavaScript projects, inspired by NgRx and Redux, and built with RxJS.",
   "author": "Bernardo Baumblatt <baumblatt@gmail.com>",
   "license": "MIT",
