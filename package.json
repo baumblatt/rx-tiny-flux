@@ -19,6 +19,7 @@
     "lightweight"
   ],
   "type": "module",
+  "types": "dist/rx-tiny-flux.d.ts",
   "main": "dist/rx-tiny-flux.esm.js",
   "zeppos": true,
   "exports": {

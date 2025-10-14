@@ -1,4 +1,4 @@
-import type { OperatorFunction, Subscription, Observable } from 'rxjs';
+import type { MonoTypeOperatorFunction, OperatorFunction, Subscription, Observable } from 'rxjs';
 
 export * from 'rxjs';
 
@@ -114,12 +114,12 @@ export function withLatestFromStore<T>(selector: (state: object) => T): Operator
 /**
  * RxJS operator that filters for the Side Service environment.
  */
-export const isSideService: () => OperatorFunction<any, any>;
+export const isSideService: <T>() => MonoTypeOperatorFunction<T>;
 
 /**
  * RxJS operator that filters for the App/Page environment.
  */
-export const isApp: () => OperatorFunction<any, any>;
+export const isSideService: <T>() => MonoTypeOperatorFunction<T>;
 
 /**
  * RxJS operator to propagate an action to another ZeppOS context.
