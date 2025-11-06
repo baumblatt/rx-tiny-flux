@@ -4,6 +4,7 @@
 
 export {
 	// Operators
+	bufferToggle,
 	catchError,
 	concatMap,
 	debounceTime,
@@ -21,6 +22,8 @@ export {
 	defer,
 	from,
 	of,
+	timer,
+	Observable,
 	// Constants
 	EMPTY,
 	// Utilities
