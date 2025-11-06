@@ -13,6 +13,7 @@ export {
 	filter,
 	map,
 	mergeMap,
+	scan,
 	switchMap,
 	take,
 	tap,
