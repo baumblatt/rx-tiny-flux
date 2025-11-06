@@ -4,17 +4,19 @@
 
 export {
 	// Operators
-	map,
+	catchError,
 	concatMap,
-	switchMap,
-	exhaustMap,
-	mergeMap,
+	debounceTime,
 	delay,
+	exhaustMap,
 	filter,
+	map,
+	mergeMap,
+	switchMap,
 	take,
 	tap,
+	throttleTime,
 	withLatestFrom,
-	catchError,
 	// Creation Functions
 	defer,
 	from,
