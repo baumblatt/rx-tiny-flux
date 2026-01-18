@@ -15,10 +15,10 @@ import {filter, map, tap} from 'rxjs';
  * It selects the current value from the store, takes only that one value, and completes,
  * preventing memory leaks.
  *
- * @param {function(object): any} selector - The selector function to get a slice of the state.
- * @returns {import('rxjs').OperatorFunction<Action, [Action, any]>} A new observable that emits an array containing the original action and the selected state slice.
+ * @param {...function(object): any} selectors - One or more selector functions to get slices of the state.
+ * @returns {import('rxjs').OperatorFunction<Action, [Action, ...any[]]>} A new observable that emits an array containing the original action and the selected state slices.
  */
-export const withLatestFromStore = (selector) => (source$) => source$.pipe(
+export const withLatestFromStore = (...selectors) => (source$) => source$.pipe(
     // Validate that the store is available on the action's context.
     tap(action => {
       if (!action.context || !action.context._store || !action.context._store._state$) {
@@ -27,12 +27,12 @@ export const withLatestFromStore = (selector) => (source$) => source$.pipe(
         );
       }
     }),
-    // Combine the action with the latest state slice from the store.
+    // Combine the action with the latest state slices from the store.
     // This is more direct and performant than using `mergeMap` because `_state$`
     // is a BehaviorSubject, allowing synchronous access to its current value.
     map(action => {
       const state = action.context._store._state$.getValue();
-      return [action, selector(state)];
+      return [action, ...selectors.map(selector => selector(state))];
     })
 );
 
