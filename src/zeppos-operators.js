@@ -1,4 +1,5 @@
 import {filter, map, tap} from 'rxjs';
+import {enqueueLargeActionTransfer} from './zeppos-file-transfer.js';
 
 /**
  * @typedef {import('./types').Action} Action
@@ -66,5 +67,23 @@ export const propagateAction = () => tap((action) => {
     action.context.call(actionToSend);
   } else {
 	console.debug(`No context: Action '${action.type}' not propagated through messaging.call(action).`);
+  }
+});
+
+/**
+ * A pipeable RxJS operator for effects, designed to propagate large actions from one ZeppOS
+ * context to another (e.g., App to Side Service) using the TransferFile API.
+ *
+ * It stores the action on disk, notifies the other context, and queues a file transfer.
+ *
+ * @returns {import('rxjs').OperatorFunction<Action, Action>} An operator that performs the side effect of transferring the action as a file.
+ */
+export const propagateLargeAction = () => tap((action) => {
+  if (action.context && typeof action.context.call === 'function') {
+	action.context.debug(`Propagation large action '${action.type}' through TransferFile.`);
+    const { context, ...actionToSend } = action;
+    enqueueLargeActionTransfer(actionToSend, action.context);
+  } else {
+	console.debug(`No context: Action '${action.type}' not propagated through TransferFile.`);
   }
 });

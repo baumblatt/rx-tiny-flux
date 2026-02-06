@@ -6,6 +6,7 @@
  */
 
 import { filter } from 'rxjs/operators';
+import { handleLargeActionMessage, setupLargeActionReceiver } from './zeppos-file-transfer.js';
 /**
  * Factory function that creates the store plugin for ZML's BaseApp/BasePage.
  * This plugin function is called by the ZML `.use()` method and adapts its behavior
@@ -42,6 +43,10 @@ function storePlugin(instance, store) {
       };
 
       this.onAction = (action) => {
+        if (handleLargeActionMessage(this, action)) {
+          return;
+        }
+
         if (action && typeof action.type === 'string') {
 		  this.debug(`Dispatching action ${action.type} from App.onAction.`);
           this.dispatch(action);
@@ -50,6 +55,7 @@ function storePlugin(instance, store) {
 		}
       };
 	  this.messaging.onCall(this.onAction);
+	  setupLargeActionReceiver(this);
 
       // Handle subscriptions at the App level.
       /**
@@ -92,6 +98,10 @@ function storePlugin(instance, store) {
 
           // For SideService, define an onAction that dispatches to its own store.
           this.onAction = (action) => {
+            if (handleLargeActionMessage(this, action)) {
+              return;
+            }
+
             if (action && typeof action.type === 'string') {
               this.debug(`Dispatching action ${action.type} from SideService.onAction.`);
               this.dispatch(action);
@@ -134,6 +144,9 @@ function storePlugin(instance, store) {
           this._store.dispatch(actionWithContext);
 		}, 50)
       };
+	  if (isSideServiceContext) {
+	    setupLargeActionReceiver(this);
+	  }
 
       /**
        * Subscribes to a piece of the store's state, with optional RxJS operators.

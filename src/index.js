@@ -9,4 +9,4 @@ export * from './rxjs.js';
 
 // Re-export ZeppOS specific functionalities
 export { storePlugin } from './zeppos.js';
-export { withLatestFromStore, isSideService, isApp, propagateAction } from './zeppos-operators.js';
+export { withLatestFromStore, isSideService, isApp, propagateAction, propagateLargeAction } from './zeppos-operators.js';
