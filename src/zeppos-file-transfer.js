@@ -1,8 +1,71 @@
-import TransferFile from '@zos/ble/TransferFile';
-import * as fs from '@zos/fs';
-
 const LARGE_ACTION_MESSAGE_KEY = '__rxTinyFluxLargeAction';
 const TRANSFER_STATE_KEY = '_rxTinyFluxTransferState';
+let cachedTransferFileInstance;
+let cachedFsModule;
+
+const tryResolveModule = (moduleName) => {
+  const loader = typeof __$$RQR$$__ === 'function'
+    ? __$$RQR$$__
+    : (typeof require === 'function' ? require : null);
+
+  if (!loader) {
+    return null;
+  }
+
+  try {
+    return loader(moduleName);
+  } catch (error) {
+    return null;
+  }
+};
+
+const resolveTransferFileInstance = () => {
+  if (cachedTransferFileInstance !== undefined) {
+    return cachedTransferFileInstance;
+  }
+
+  const isSideServiceContext = typeof messaging !== 'undefined';
+
+  if (isSideServiceContext) {
+    if (typeof transferFile !== 'undefined' && typeof transferFile.getInbox === 'function') {
+      cachedTransferFileInstance = transferFile;
+      return cachedTransferFileInstance;
+    }
+  }
+
+  if (isSideServiceContext && typeof globalThis !== 'undefined') {
+    if (globalThis.transferFile && typeof globalThis.transferFile.getInbox === 'function') {
+      cachedTransferFileInstance = globalThis.transferFile;
+      return cachedTransferFileInstance;
+    }
+  }
+
+  if (!isSideServiceContext) {
+    const module = tryResolveModule('@zos/ble/TransferFile');
+    const TransferFileCtor = module && (module.default || module.TransferFile || module);
+    if (TransferFileCtor) {
+      cachedTransferFileInstance = new TransferFileCtor();
+      return cachedTransferFileInstance;
+    }
+  }
+
+  cachedTransferFileInstance = null;
+  return cachedTransferFileInstance;
+};
+
+const resolveFsModule = () => {
+  if (cachedFsModule !== undefined) {
+    return cachedFsModule;
+  }
+
+  if (typeof globalThis !== 'undefined' && globalThis.fs) {
+    cachedFsModule = globalThis.fs;
+    return cachedFsModule;
+  }
+
+  cachedFsModule = tryResolveModule('@zos/fs') || null;
+  return cachedFsModule;
+};
 
 const logDebug = (context, message) => {
   if (context && typeof context.debug === 'function') {
@@ -30,7 +93,12 @@ const getTransferState = (context) => {
   }
 
   try {
-    const transferFile = new TransferFile();
+    const transferFile = resolveTransferFileInstance();
+    if (!transferFile) {
+      logError(context, '[rx-tiny-flux] TransferFile is not available.');
+      return null;
+    }
+
     const state = {
       transferFile,
       inbox: transferFile.getInbox(),
@@ -82,7 +150,8 @@ const decodeToString = (data) => {
 };
 
 const writeActionFile = (context, filePath, action) => {
-  if (typeof fs.writeFileSync !== 'function') {
+  const fs = resolveFsModule();
+  if (!fs || typeof fs.writeFileSync !== 'function') {
     throw new Error('[rx-tiny-flux] writeFileSync is not available in @zos/fs.');
   }
   fs.writeFileSync(filePath, JSON.stringify(action));
@@ -90,7 +159,8 @@ const writeActionFile = (context, filePath, action) => {
 };
 
 const readActionFile = (context, filePath) => {
-  if (typeof fs.readFileSync !== 'function') {
+  const fs = resolveFsModule();
+  if (!fs || typeof fs.readFileSync !== 'function') {
     throw new Error('[rx-tiny-flux] readFileSync is not available in @zos/fs.');
   }
   const raw = fs.readFileSync(filePath);
@@ -100,6 +170,11 @@ const readActionFile = (context, filePath) => {
 
 const removeFile = (context, filePath) => {
   if (!filePath) {
+    return;
+  }
+
+  const fs = resolveFsModule();
+  if (!fs) {
     return;
   }
 
