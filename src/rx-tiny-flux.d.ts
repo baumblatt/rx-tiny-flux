@@ -119,7 +119,7 @@ export const isSideService: <T>() => MonoTypeOperatorFunction<T>;
 /**
  * RxJS operator that filters for the App/Page environment.
  */
-export const isSideService: <T>() => MonoTypeOperatorFunction<T>;
+export const isApp: <T>() => MonoTypeOperatorFunction<T>;
 
 /**
  * RxJS operator to propagate an action to another ZeppOS context.
