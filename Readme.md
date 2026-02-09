@@ -194,10 +194,6 @@ counterSubscription.unsubscribe();
 
 For developers using the `ZML` library on the ZeppOS platform, `rx-tiny-flux` offers an optional plugin that seamlessly integrates the store with the `BaseApp` and `BasePage` component lifecycle.
 
-**Disclaimer:** This library is currently intended to run inside ZeppOS. It uses ZeppOS-only modules (like `@zos/fs` and `@zos/ble/TransferFile`) for large action transfers, so bundlers outside the ZeppOS environment may warn about unresolved dependencies.
-
-**Promise:** A future release will provide a ZeppOS-safe optional build (lazy-loading the `@zos/*` modules) so non-ZeppOS environments can consume the library without these warnings.
-
 This plugin injects `dispatch` and `subscribe` methods into your component's instance. Most importantly, the `subscribe` method is lifecycle-aware: it automatically tracks all subscriptions and unsubscribes from them when the component's `onDestroy` hook is called, preventing common memory leaks.
 
 #### How to Use
@@ -351,8 +347,6 @@ const showSuccessToastEffect = createEffect(actions$ => actions$.pipe(
 ), { dispatch: false });
 
 ```
-
-For large payloads that exceed the `messaging.call` limits, use `propagateLargeAction()` instead of `propagateAction()`. It persists the action on disk, transfers it using the TransferFile API, and dispatches it on the other side. Ensure the `storePlugin` is registered on both the App and Side Service contexts so the receiver can read and dispatch the file.
 
 #### Accessing State within Effects using `withLatestFromStore`
 
