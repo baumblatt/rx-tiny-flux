@@ -35,10 +35,10 @@ function storePlugin(instance, store) {
 	  this.debug('Attach the store and a dispatch method to the App instance.')
       this._store = store;
       this.dispatch = (action) => {
-	    setTimeout(() => {
-          const actionWithContext = { ...action, context: this };
-          this._store.dispatch(actionWithContext);
-		}, 50)
+		  Promise.resolve().then(() => {
+			  const actionWithContext = action.context ? action : { ...action, context: this };
+			  this._store.dispatch(actionWithContext);
+		  });
       };
 
       this.onAction = (action) => {
@@ -129,10 +129,10 @@ function storePlugin(instance, store) {
 
       this.debug(`Attaching store methods to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`);
       this.dispatch = (action) => {
-	    setTimeout(() => {
-          const actionWithContext = { ...action, context: this };
-          this._store.dispatch(actionWithContext);
-		}, 50)
+		Promise.resolve().then(() => {
+		  const actionWithContext = action.context ? action : { ...action, context: this };
+		  this._store.dispatch(actionWithContext);
+		});
       };
 
       /**
