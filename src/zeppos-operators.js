@@ -63,6 +63,10 @@ export const propagateAction = () => tap((action) => {
     // The receiving side will inject its own context.
 	action.context.debug(`Propagation action '${action.type}' through messaging.call(action).`);
     const { context, ...actionToSend } = action;
+    const payloadSizeBytes = typeof TextEncoder !== 'undefined'
+      ? new TextEncoder().encode(JSON.stringify(actionToSend)).length
+      : unescape(encodeURIComponent(JSON.stringify(actionToSend))).length;
+    action.context.debug(`Payload size for action '${action.type}': ${payloadSizeBytes} bytes.`);
     action.context.call(actionToSend);
   } else {
 	console.debug(`No context: Action '${action.type}' not propagated through messaging.call(action).`);
