@@ -93,7 +93,7 @@ function storePlugin(instance, store) {
           // For SideService, define an onAction that dispatches to its own store.
           this.onAction = (action) => {
             if (action && typeof action.type === 'string') {
-              this.debug(`Dispatching action ${action.type} from SideService.onAction.`);
+              this.debug(`Dispatching action '${action.type}' from SideService.onAction.`);
               this.dispatch(action);
             } else {
               this.debug(`Not an Action, discarding the message on SideService.onAction.`);
@@ -129,10 +129,15 @@ function storePlugin(instance, store) {
 
       this.debug(`Attaching store methods to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`);
       this.dispatch = (action) => {
-		Promise.resolve().then(() => {
-		  const actionWithContext = action.context ? action : { ...action, context: this };
-		  this._store.dispatch(actionWithContext);
-		});
+		if (isSideServiceContext) {
+			const actionWithContext = action.context ? action : { ...action, context: this };
+			this._store.dispatch(actionWithContext);
+		} else {
+			Promise.resolve().then(() => {
+				const actionWithContext = action.context ? action : { ...action, context: this };
+				this._store.dispatch(actionWithContext);
+			});
+		}
       };
 
       /**
