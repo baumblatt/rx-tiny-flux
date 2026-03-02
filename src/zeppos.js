@@ -32,7 +32,7 @@ function storePlugin(instance, store) {
 	  // add the App context to the store.
 	  store.setContext(this);
 
-	  this.debug('Attach the store and a dispatch method to the App instance.')
+	  this.log('Attach the store and a dispatch method to the App instance.')
       this._store = store;
       this.dispatch = (action) => {
 		  Promise.resolve().then(() => {
@@ -43,10 +43,10 @@ function storePlugin(instance, store) {
 
       this.onAction = (action) => {
         if (action && typeof action.type === 'string') {
-		  this.debug(`Dispatching action ${action.type} from App.onAction.`);
+		  this.log(`Dispatching action ${action.type} from App.onAction.`);
           this.dispatch(action);
         } else {
-		  this.debug(`Not an Action, discarding the message on App.onAction.`)
+		  this.log(`Not an Action, discarding the message on App.onAction.`)
 		}
       };
 	  this.messaging.onCall(this.onAction);
@@ -93,10 +93,10 @@ function storePlugin(instance, store) {
           // For SideService, define an onAction that dispatches to its own store.
           this.onAction = (action) => {
             if (action && typeof action.type === 'string') {
-              this.debug(`Dispatching action '${action.type}' from SideService.onAction.`);
+              this.log(`Dispatching action '${action.type}' from SideService.onAction.`);
               this.dispatch(action);
             } else {
-              this.debug(`Not an Action, discarding the message on SideService.onAction.`);
+              this.log(`Not an Action, discarding the message on SideService.onAction.`);
             }
           };
         }
@@ -127,7 +127,7 @@ function storePlugin(instance, store) {
       this._store = localStore;
       this.messaging.onCall(this.onAction);
 
-      this.debug(`Attaching store methods to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`);
+      this.log(`Attaching store methods to the ${isSideServiceContext ? 'SideService' : 'Page'} instance.`);
       this.dispatch = (action) => {
 		if (isSideServiceContext) {
 			const actionWithContext = action.context ? action : { ...action, context: this };
