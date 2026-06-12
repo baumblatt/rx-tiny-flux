@@ -1,5 +1,5 @@
 import {BehaviorSubject, Subject} from 'rxjs';
-import {distinctUntilChanged, map, scan, shareReplay, startWith} from 'rxjs/operators';
+import {catchError, distinctUntilChanged, map, scan, shareReplay, startWith} from 'rxjs/operators';
 
 /**
  * @typedef {import('./types').Action} Action
@@ -125,7 +125,20 @@ export class Store {
     effects.forEach((effectFn) => {
       // Check for the metadata attached by createEffect
       const config = effectFn._rxEffect || { dispatch: true };
-      let effect$ = effectFn(this._actions$);
+
+      // Isolate effect failures. An uncaught throw inside an effect (e.g. a
+      // serializer called from a `tap`) would otherwise error this subscription
+      // and tear the effect down for the rest of the session — silently, since
+      // neither branch below installs an error handler. `catchError` logs the
+      // failure and returns the source (`caught`) so the effect re-subscribes and
+      // keeps reacting to future actions instead of dying on one bad payload.
+      const effect$ = effectFn(this._actions$).pipe(
+        catchError((error, caught) => {
+          const message = error && error.message ? error.message : error;
+          console.error(`[rx-tiny-flux] Effect threw and was restarted: ${message}`);
+          return caught;
+        })
+      );
 
       if (config.dispatch) {
         // If a context is set, automatically inject it into actions emitted by the effect.
